@@ -1,16 +1,24 @@
 # -*- coding=utf-8 -*-
 import json
+import os
 import re
 
+import pymongo
 import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import RequestException
 from urllib.parse import urlencode
+from hashlib import md5
+from config import *
 
 __author__ = 'STM'
 
+client = pymongo.MongoClient(MONGO_URL)
+db = client[MONGO_DB]
+
 headers = {
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36',
+    'Referer': 'https://www.toutiao.com'
 }
 
 
@@ -44,7 +52,9 @@ def parse_page_index(html):
 def get_page_detail(url):
     try:
         response = requests.get(url, headers=headers)
+        print(url)
         if response.status_code == 200:
+            print(response.text)
             return response.text
         return None
     except RequestException:
@@ -71,6 +81,31 @@ def parse_page_detail(html, url):
     return None
 
 
+def save_to_mongo(result):
+    if db[MONGO_TABLE].insert_many(result):
+        print('存储到MongoDB成功', result)
+        return True
+    return False
+
+
+def download_image(url):
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            save_image(response.content)
+        return None
+    except RequestException:
+        print('请求图片出错', url)
+        return None
+
+
+def save_image(content):
+    file_path = '{0}/{1}{2}'.format(os.getcwd(), md5(content), '.jpg')
+    if not os.path.exists(file_path):
+        with open(file_path, 'wb') as f:
+            f.write(content)
+
+
 def main():
     html = get_page_index(0, '街拍')
     for url in parse_page_index(html):
@@ -78,7 +113,12 @@ def main():
         if html:
             result = parse_page_detail(html, url)
             print(result)
+            save_to_mongo(result)
 
 
 if __name__ == '__main__':
     main()
+    # response = requests.get("https://www.toutiao.com/a6601276460789400078/", headers=headers)
+    # print(response.text)
+    # print(response.url)
+
