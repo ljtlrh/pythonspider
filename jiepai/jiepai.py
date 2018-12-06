@@ -82,10 +82,13 @@ def parse_page_detail(html, url):
 
 
 def save_to_mongo(result):
-    if db[MONGO_TABLE].insert_many(result):
+    if result is None:
+        return False
+    elif db[MONGO_TABLE].insert_one(result):
         print('存储到MongoDB成功', result)
         return True
-    return False
+    else:
+        return False
 
 
 def download_image(url):
@@ -113,7 +116,6 @@ def main():
         if html:
             result = parse_page_detail(html, url)
             print(result)
-            save_to_mongo(result)
 
 
 if __name__ == '__main__':
@@ -121,4 +123,7 @@ if __name__ == '__main__':
     # response = requests.get("https://www.toutiao.com/a6601276460789400078/", headers=headers)
     # print(response.text)
     # print(response.url)
-
+    result = {'title': '街拍北京，真实的三里屯街拍，有你喜欢的吗？', 'url': 'https://www.toutiao.com/a6575128377458426371',
+              'images': 'http://p3.pstatp.com/origin/pgc-image/15308911861360624e6e374'}
+    # save_to_mongo(result)
+    print(result['images'])
