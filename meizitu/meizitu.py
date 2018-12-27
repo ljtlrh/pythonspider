@@ -82,7 +82,7 @@ def download_image(path, url):
 
 
 def main():
-    html = get_page_index('王阳阳')
+    html = get_page_index('')
     # print(html)
     urls, texts = parse_page_index(html)
     for i in range(len(urls)):
